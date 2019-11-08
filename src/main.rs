@@ -1,35 +1,26 @@
-use std::io::prelude::*;
-pub mod common;
+extern crate rand;
+
+mod common;
+mod client;
+mod metainfo;
+
+fn generate_peer_id() -> String {
+  let mut rng = rand::thread_rng();
+  let rand_chars: String = rng.gen_ascii_chars().taks(20).collect();
+  format!("{}", rand_chars)
+}
 
 fn main() -> std::io::Result<()> {
-    let connection = common::network::connect_to_peer("10.212.7.100");
-    match connection {
-        Some(mut stream) => {
-            println!("enter io");
-            let mut content: Vec<u8>;
-            content = common::utils::concat_array(&[19],
-                                                  common::utils::string_to_u8("BitTorrent protocol"));
-            content = common::utils::concat_array(&content, &[0, 0, 0, 0, 0, 0, 0 ,0]);
-            match common::utils::decode_hex("c9bc228321c467ec197fc9dfd97811002046fec7") {
-                Ok(hex) => { content = common::utils::concat_array(&content, &hex); }
-                Err(_e) => {}
-            }
-            match common::utils::decode_hex("41322d312d33342d302d8838db3e46db95ad831e") {
-                Ok(hex) => { content = common::utils::concat_array(&content, &hex); }
-                Err(_e) => {}
-            }
-            stream.write(&content)?;
-
-            match stream.read(&mut [0; 128]) {
-                Ok(_okresult) => {
-                    println!("{}", _okresult);
-                },
-                Err(_err) => {
-                    println!("hello");
-                }
-            }
-        }
-        None => println!("haha")
+  let connection = common::network::connect_to_peer("10.212.7.100");
+  match connection {
+    Some(stream) => {
+      println!("enter io");
+      let metainfo = metainfo::MetaInfo::new();
+      let peer_id = generate_peer_id();
+      let mut peer: client::Connection = client::Connection::new(stream, metainfo, "hha".to_string());
+      peer.handshake()?;
     }
-    Ok(())
+    None => println!("haha")
+  }
+  Ok(())
 }
